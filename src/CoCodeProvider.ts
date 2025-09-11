@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import axios from 'axios';
 import { getNonce } from './utils/getNonce';
+import { getUri } from './utils/getUri';
 
 export class CoCodeProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'co-code-sidebar';
@@ -16,18 +16,26 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ) {
+    const resourceRoots = [this._extensionUri];
+
+    if (vscode.workspace.workspaceFolders) {
+      resourceRoots.push(
+        ...vscode.workspace.workspaceFolders.map((folder) => folder.uri),
+      );
+    }
+
     webviewView.webview.options = {
       // 允许在webview中运行脚本
       enableScripts: true,
       // 允许访问本地资源
-      localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'webview')],
+      localResourceRoots: resourceRoots,
     };
 
     // 设置webview的HTML内容
-    webviewView.webview.html = await this.getHMRHtmlContent(
-      webviewView.webview,
-    );
-    // this._getHtmlForWebview(webviewView.webview);
+    webviewView.webview.html =
+      this._context.extensionMode === vscode.ExtensionMode.Development
+        ? await this.getHMRHtmlContent(webviewView.webview)
+        : this.getHtmlForWebview(webviewView.webview);
 
     // 监听来自webview的消息
     webviewView.webview.onDidReceiveMessage(
@@ -61,21 +69,22 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
 
   private async getHMRHtmlContent(webview: vscode.Webview) {
     const localPort = '5173';
-    const localServerUrl = `http://localhost:${localPort}`;
+    const localServerUrl = `localhost:${localPort}`;
     try {
-      await axios.get(localServerUrl);
+      await fetch(localServerUrl);
     } catch (error) {
-      vscode.window.showErrorMessage(`访问${localServerUrl}本地开发服务失败`);
+      vscode.window.showErrorMessage(
+        `访问http://${localServerUrl}本地开发服务失败`,
+      );
     }
     const nonce = getNonce();
     const csp = [
       "default-src 'none'",
-      `font-src ${webview.cspSource} data:`,
-      `style-src ${webview.cspSource} 'unsafe-inline' https://* http://${localServerUrl} http://0.0.0.0:${localPort}`,
-      `img-src ${webview.cspSource} https://* data:`,
+      `style-src ${webview.cspSource} 'unsafe-inline' http://${localServerUrl}`,
+      `img-src ${webview.cspSource} http://${localServerUrl} data:`,
       `media-src ${webview.cspSource}`,
-      `script-src 'unsafe-eval' ${webview.cspSource} https://* http://${localServerUrl} http://0.0.0.0:${localPort} 'nonce-${nonce}'`,
-      `connect-src ${webview.cspSource} https://* ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`,
+      `script-src 'unsafe-eval' ${webview.cspSource} http://${localServerUrl} 'nonce-${nonce}'`,
+      `connect-src ${webview.cspSource} ws://${localServerUrl} http://${localServerUrl}`,
     ];
     // 安装 es6-string-html 插件启用高亮
     return /*html */ `
@@ -84,16 +93,19 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
         <head>
         	<meta http-equiv="Content-Security-Policy" content="${csp.join('; ')}">
           <script type="module" nonce="${nonce}">
-            import { injectIntoGlobalHook } from 'http://localhost:${localPort}/@react-refresh';
+            import { injectIntoGlobalHook } from 'http://${localServerUrl}/@react-refresh';
             injectIntoGlobalHook(window);
             window.$RefreshReg$ = () => {};
             window.$RefreshSig$ = () => (type) => type;
           </script>
-          <script type="module" nonce="${nonce}" src="http://localhost:${localPort}/@vite/client"></script>
+          <script type="module" nonce="${nonce}" src="http://${localServerUrl}/@vite/client"></script>
           <meta charset="UTF-8" />
-          <link rel="icon" type="image/svg+xml" href="http://localhost:${localPort}/vite.svg" />
+          <link rel="icon" type="image/svg+xml" href="http://${localServerUrl}/vite.svg" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>co code</title>
+          <script nonce="${nonce}">
+						window.PUBLIC_BASE_URI = "http://${localServerUrl}"
+					</script>
         </head>
         <body>
           <div id="root"></div>
@@ -105,22 +117,38 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
 
   private getHtmlForWebview(webview: vscode.Webview) {
     const nonce = getNonce();
+    const styleUri = getUri(webview, this._context.extensionUri, [
+      'webview-ui-dist',
+      'assets',
+      'index.css',
+    ]);
+    const scriptUri = getUri(webview, this._context.extensionUri, [
+      'webview-ui-dist',
+      'assets',
+      'index.js',
+    ]);
+    const publicUri = getUri(webview, this._context.extensionUri, [
+      'webview-ui-dist',
+    ]);
+
     return /*html*/ `
       <!DOCTYPE html>
       <html lang="en">
         <head>
           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:; media-src ${webview.cspSource}; script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' 'strict-dynamic'; connect-src ${webview.cspSource};">
           <meta charset="UTF-8" />
-          <link rel="icon" type="image/svg+xml" href="/vite.svg" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>co code</title>
-          <script type="module" crossorigin src="/assets/index-BKroMzMQ.js"></script>
-          <link rel="stylesheet" crossorigin href="/assets/index-D8b4DHJx.css" />
+          <script type="module" nonce="${nonce}" crossorigin src="${scriptUri}"></script>
+          <script nonce="${nonce}">
+						window.PUBLIC_BASE_URI = "${publicUri}"
+					</script>
+          <link rel="stylesheet" crossorigin href="${styleUri}" />
         </head>
         <body>
           <div id="root"></div>
         </body>
-      </html>  
+      </html> 
     `;
   }
 

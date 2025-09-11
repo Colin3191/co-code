@@ -1,71 +1,23 @@
-# co-code README
+# Co-Code AI助手
 
-This is the README for your extension "co-code". After writing up a brief description, we recommend including the following sections.
+Co-Code 是一个强大的 VS Code 扩展，集成了 AI 代码助手功能，帮助开发者提高编程效率。
 
-## Features
+## 功能特性
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **代码解释**: 选中代码后，AI 可以详细解释代码的功能和逻辑
+- **代码优化**: 提供代码优化建议，帮助改进代码质量和性能
+- **侧边栏面板**: 提供直观的 AI 助手界面，方便与 AI 进行交互
+- **右键菜单**: 在编辑器中右键即可快速访问 AI 功能
 
-For example if there is an image subfolder under your extension project workspace:
+## 使用方法
 
-\!\[feature X\]\(images/feature-x.png\)
+1. 安装扩展后，在 VS Code 侧边栏会看到 Co-Code 图标
+2. 选中要分析的代码
+3. 右键选择"解释代码"或"优化代码"
+4. 或者点击侧边栏的 Co-Code 面板进行交互
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 命令
 
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- `co-code.openSidebar`: 打开 Co-Code 面板
+- `co-code.explainCode`: 解释选中的代码
+- `co-code.optimizeCode`: 优化选中的代码
