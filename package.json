@@ -12,7 +12,9 @@
     "url": "https://github.com/Colin3191/co-code.git"
   },
   "categories": [
-    "Other"
+    "Chat",
+    "AI",
+    "Programming Languages"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
