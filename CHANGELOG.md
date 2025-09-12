@@ -4,7 +4,7 @@ All notable changes to the "co-code" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.3]
 
 - 修改分类
 
