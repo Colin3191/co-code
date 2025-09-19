@@ -24,13 +24,25 @@
         "command": "co-code.openSidebar",
         "title": "打开 Co-Code 面板",
         "icon": "$(robot)"
+      },
+      {
+        "command": "co-code.openSettingPanel",
+        "title": "设置",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "co-code.openSidebar",
-          "when": "true"
+          "command": "co-code.openSettingPanel",
+          "when": "view == co-code-sidebar"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "co-code.openSettingPanel",
+          "group": "navigation@1",
+          "when": "view == co-code-sidebar"
         }
       ]
     },

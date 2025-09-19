@@ -5,6 +5,7 @@ import { getUri } from './utils/getUri';
 
 export class CoCodeProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'co-code-sidebar';
+  private _webviewView?: vscode.WebviewView;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
@@ -16,6 +17,7 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ) {
+    this._webviewView = webviewView;
     const resourceRoots = [this._extensionUri];
 
     if (vscode.workspace.workspaceFolders) {
@@ -43,10 +45,16 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
         switch (message.type) {
           case 'ready':
             console.log('Co-Code侧边栏已准备就绪');
+            // 发送当前设置到webview
+            this._sendSettingsToWebview(webviewView.webview);
             break;
 
           case 'saveSettings':
             this._saveSettings(message.settings);
+            break;
+
+          case 'loadSettings':
+            this._sendSettingsToWebview(webviewView.webview);
             break;
 
           case 'insertCode':
@@ -70,13 +78,6 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
   private async getHMRHtmlContent(webview: vscode.Webview) {
     const localPort = '5173';
     const localServerUrl = `localhost:${localPort}`;
-    try {
-      await fetch(localServerUrl);
-    } catch (error) {
-      vscode.window.showErrorMessage(
-        `访问http://${localServerUrl}本地开发服务失败`,
-      );
-    }
     const nonce = getNonce();
     const csp = [
       "default-src 'none'",
@@ -168,6 +169,22 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
     console.log('设置已保存:', settings);
   }
 
+  private _sendSettingsToWebview(webview: vscode.Webview) {
+    // 从全局状态加载设置
+    const settings = this._context.globalState.get('coCodeSettings', {
+      apiKey: '',
+      model: 'gpt-3.5-turbo',
+      temperature: 0.7,
+      maxTokens: 2048,
+      autoSave: true,
+    });
+
+    webview.postMessage({
+      type: 'settingsLoaded',
+      settings: settings,
+    });
+  }
+
   private _insertCodeToEditor(code: string) {
     const editor = vscode.window.activeTextEditor;
     if (editor) {
@@ -195,6 +212,19 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
         language: document.languageId,
         fileName: path.basename(document.fileName),
       });
+    }
+  }
+
+  /**
+   * 打开设置面板
+   */
+  public openSettingPanel() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        type: 'openSettingPanel',
+        timestamp: Date.now(),
+      });
+      this._webviewView.show();
     }
   }
 }
