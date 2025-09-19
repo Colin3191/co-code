@@ -1,0 +1,48 @@
+---
+alwaysApply: true
+description: PNPM包管理工具使用规范
+---
+
+# PNPM包管理工具规范
+
+本项目使用 **pnpm** 作为包管理工具，而不是 npm 或 yarn。
+
+## 包管理命令
+
+### 安装依赖
+- 安装所有依赖：`pnpm install` 或 `pnpm i`
+- 安装生产依赖：`pnpm add <package-name>`
+- 安装开发依赖：`pnpm add -D <package-name>`
+- 安装全局包：`pnpm add -g <package-name>`
+
+### 移除依赖
+- 移除依赖：`pnpm remove <package-name>` 或 `pnpm rm <package-name>`
+
+### 运行脚本
+- 运行脚本：`pnpm run <script-name>` 或 `pnpm <script-name>`
+- 查看可用脚本：`pnpm run`
+
+### 其他常用命令
+- 更新依赖：`pnpm update`
+- 清理缓存：`pnpm store prune`
+- 查看依赖树：`pnpm list`
+
+## 重要说明
+
+1. **始终使用 pnpm**：在任何涉及包管理的操作中，都应该使用 pnpm 命令，而不是 npm 或 yarn
+2. **锁文件**：项目使用 `pnpm-lock.yaml` 作为锁文件，确保依赖版本的一致性
+3. **工作空间支持**：pnpm 原生支持 monorepo 和工作空间，本项目包含多个子项目（主项目和 webview-ui）
+4. **性能优势**：pnpm 通过硬链接和符号链接显著减少磁盘空间使用和安装时间
+
+## 项目结构
+
+本项目是一个 VS Code 扩展，包含两个主要部分：
+- 根目录：VS Code 扩展主体，使用 [package.json](mdc:package.json) 和 [pnpm-lock.yaml](mdc:pnpm-lock.yaml)
+- webview-ui/：前端 UI 部分，有独立的 [webview-ui/package.json](mdc:webview-ui/package.json) 和 [webview-ui/pnpm-lock.yaml](mdc:webview-ui/pnpm-lock.yaml)
+
+## 最佳实践
+
+1. 在添加新依赖前，先检查是否已存在类似功能的包
+2. 优先使用 pnpm 的精确版本安装：`pnpm add package@1.2.3`
+3. 定期运行 `pnpm audit` 检查安全漏洞
+4. 使用 `pnpm outdated` 检查过时的依赖包

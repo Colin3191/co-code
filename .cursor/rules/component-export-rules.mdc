@@ -1,0 +1,68 @@
+---
+globs: *.tsx,*.ts,*.jsx,*.js
+description: 组件导出规范 - 使用命名导出而不是默认导出
+---
+
+# 组件导出规范
+
+本项目中的所有组件必须使用**命名导出**（named export），禁止使用默认导出（export default）。
+
+## 规则说明
+
+### ✅ 正确的导出方式
+```tsx
+// 组件定义时直接导出
+export const Button = ({ children, ...props }) => {
+  return <button {...props}>{children}</button>;
+};
+
+// 或者在文件末尾导出
+const Card = ({ title, content }) => {
+  return (
+    <div>
+      <h3>{title}</h3>
+      <p>{content}</p>
+    </div>
+  );
+};
+
+export { Card };
+```
+
+### ❌ 禁止的导出方式
+```tsx
+// 禁止使用默认导出
+const Button = ({ children, ...props }) => {
+  return <button {...props}>{children}</button>;
+};
+
+export default Button; // ❌ 不允许
+```
+
+## 对应的导入方式
+
+使用命名导出时，导入也必须使用命名导入：
+
+```tsx
+// 正确的导入方式
+import { Button, Card } from './components/ui';
+import { ThemeProvider } from './components/theme-provider';
+
+// 错误的导入方式（对应默认导出）
+import Button from './components/ui/button'; // ❌ 不允许
+```
+
+## 优势
+
+1. **一致性**：保持整个项目的导出风格一致
+2. **可维护性**：更容易重构和重命名组件
+3. **IDE 支持**：更好的自动完成和重构支持
+4. **多导出**：一个文件可以导出多个组件或工具函数
+
+## 适用范围
+
+此规则适用于：
+- React 组件（.tsx, .jsx 文件）
+- TypeScript/JavaScript 模块（.ts, .js 文件）
+- 工具函数和类型定义
+- 所有可复用的代码模块

@@ -1,5 +1,12 @@
-function App() {
-  return <div className="text-lg text-blue-500">hello wrold</div>;
-}
+import { ChatInterface } from '@/components/ChatInterface';
+import { ThemeProvider } from './components/theme-provider';
 
-export default App;
+const App = () => {
+  return (
+    <ThemeProvider defaultTheme="dark">
+      <ChatInterface />
+    </ThemeProvider>
+  );
+};
+
+export { App };
