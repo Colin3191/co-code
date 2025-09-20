@@ -1,0 +1,40 @@
+---
+description: 基于 selector 的方式使用 zustand store
+globs: *.ts,*.tsx
+---
+
+# Zustand Store 使用规范
+
+## 唯一正确的写法
+
+```tsx
+// ✅ 永远只用这种方式
+const currentTab = useTabStore((state) => state.currentTab);
+const setCurrentTab = useTabStore((state) => state.setCurrentTab);
+const isLoading = useTabStore((state) => state.isLoading);
+
+// 简单计算也可以
+const isSettingsTab = useTabStore((state) => state.currentTab === 'settings');
+const tabCount = useTabStore((state) => state.tabs.length);
+```
+
+## 禁止的写法
+
+```tsx
+// ❌ 禁止解构
+const { currentTab } = useTabStore();
+const { currentTab, setCurrentTab } = useTabStore((state) => ({ ... }));
+
+// ❌ 禁止选择整个 store
+const store = useTabStore();
+
+// ❌ 禁止返回对象
+const data = useTabStore((state) => ({ tab: state.currentTab }));
+```
+
+## 核心原则
+
+1. **一个 selector 只选择一个值**
+2. **每个状态分别选择**
+3. **不要解构，不要返回对象**
+4. **保持简单直接**

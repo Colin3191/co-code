@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -36,9 +36,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Settings, ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
-import { useTabStore } from '@/store/useTabStore';
+} from "@/components/ui/table";
+import { Settings, ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
+import { useTabStore } from "@/store/useTabStore";
 
 interface ModelConfig {
   id: string;
@@ -49,15 +49,23 @@ interface ModelConfig {
 }
 
 const modelProviders = [
-  { value: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
-  { value: 'anthropic', label: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1' },
-  { value: 'google', label: 'Google', baseUrl: 'https://generativelanguage.googleapis.com/v1' },
-  { value: 'custom', label: '自定义', baseUrl: '' },
+  {
+    value: "DeepSeek",
+    label: "DeepSeek",
+    baseUrl: "https://api.deepseek.com/v1",
+  },
 ];
 
+const modelOptions = {
+  DeepSeek: [
+    { value: "deepseek-chat", label: "deepseek-chat" },
+    { value: "deepseek-reasoner", label: "deepseek-reasoner" },
+  ],
+};
+
 export const SettingsPanel = () => {
-  const { setCurrentTab } = useTabStore();
-  
+  const setCurrentTab = useTabStore((state) => state.setCurrentTab);
+
   const [models, setModels] = useState<ModelConfig[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ModelConfig | null>(null);
@@ -65,40 +73,42 @@ export const SettingsPanel = () => {
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
 
   // 弹窗表单状态
-  const [formData, setFormData] = useState<Omit<ModelConfig, 'id'>>({
-    name: '',
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    apiKey: '',
+  const [formData, setFormData] = useState<Omit<ModelConfig, "id">>({
+    name: "",
+    provider: "DeepSeek",
+    baseUrl: "https://api.deepseek.com/v1",
+    apiKey: "",
   });
 
   // 从存储中加载配置
   useEffect(() => {
-    const savedModels = localStorage.getItem('co-code-models-config');
+    const savedModels = localStorage.getItem("co-code-models-config");
     if (savedModels) {
       try {
         const parsed = JSON.parse(savedModels);
         setModels(Array.isArray(parsed) ? parsed : []);
       } catch (error) {
-        console.error('Failed to parse saved models:', error);
+        console.error("Failed to parse saved models:", error);
         // 如果解析失败，尝试兼容旧格式
-        const oldConfig = localStorage.getItem('co-code-model-config');
+        const oldConfig = localStorage.getItem("co-code-model-config");
         if (oldConfig) {
           try {
             const oldParsed = JSON.parse(oldConfig);
             const migratedModel: ModelConfig = {
-              id: '1',
-              name: oldParsed.name || 'gpt-3.5-turbo',
-              provider: oldParsed.name?.startsWith('claude') ? 'anthropic' : 
-                        oldParsed.name?.startsWith('gemini') ? 'google' : 'openai',
-              baseUrl: oldParsed.baseUrl || 'https://api.openai.com/v1',
-              apiKey: oldParsed.apiKey || '',
+              id: "1",
+              name: oldParsed.name || "deepseek-chat",
+              provider: "deepseek",
+              baseUrl: oldParsed.baseUrl || "https://api.deepseek.com/v1",
+              apiKey: oldParsed.apiKey || "",
             };
             setModels([migratedModel]);
-            localStorage.setItem('co-code-models-config', JSON.stringify([migratedModel]));
-            localStorage.removeItem('co-code-model-config');
+            localStorage.setItem(
+              "co-code-models-config",
+              JSON.stringify([migratedModel])
+            );
+            localStorage.removeItem("co-code-model-config");
           } catch (migrationError) {
-            console.error('Failed to migrate old config:', migrationError);
+            console.error("Failed to migrate old config:", migrationError);
           }
         }
       }
@@ -106,21 +116,33 @@ export const SettingsPanel = () => {
   }, []);
 
   const handleProviderChange = (provider: string) => {
-    const selectedProvider = modelProviders.find(p => p.value === provider);
-    setFormData(prev => ({
+    const selectedProvider = modelProviders.find((p) => p.value === provider);
+    setFormData((prev) => ({
       ...prev,
       provider,
-      baseUrl: selectedProvider?.baseUrl || '',
+      baseUrl: selectedProvider?.baseUrl || "",
+      name: "", // 重置模型名称，让用户重新选择
     }));
+  };
+
+  const handleModelChange = (modelName: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: modelName,
+    }));
+  };
+
+  const getCurrentModelOptions = () => {
+    return modelOptions[formData.provider as keyof typeof modelOptions] || [];
   };
 
   const openAddDialog = () => {
     setEditingModel(null);
     setFormData({
-      name: '',
-      provider: 'openai',
-      baseUrl: 'https://api.openai.com/v1',
-      apiKey: '',
+      name: "",
+      provider: "deepseek",
+      baseUrl: "https://api.deepseek.com/v1",
+      apiKey: "",
     });
     setIsDialogOpen(true);
   };
@@ -148,8 +170,8 @@ export const SettingsPanel = () => {
 
       if (editingModel) {
         // 编辑现有模型
-        updatedModels = models.map(model => 
-          model.id === editingModel.id 
+        updatedModels = models.map((model) =>
+          model.id === editingModel.id
             ? { ...formData, id: editingModel.id }
             : model
         );
@@ -159,23 +181,26 @@ export const SettingsPanel = () => {
           ...formData,
           id: Date.now().toString(),
         };
-        
+
         updatedModels = [...models, newModel];
       }
 
       setModels(updatedModels);
 
       // 保存到本地存储
-      localStorage.setItem('co-code-models-config', JSON.stringify(updatedModels));
+      localStorage.setItem(
+        "co-code-models-config",
+        JSON.stringify(updatedModels)
+      );
 
       // 通知 VS Code 扩展更新配置
       if (window.parent && window.parent.postMessage) {
         window.parent.postMessage(
           {
-            type: 'updateModelsConfig',
+            type: "updateModelsConfig",
             allModels: updatedModels,
           },
-          '*',
+          "*"
         );
       }
 
@@ -183,28 +208,31 @@ export const SettingsPanel = () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       setIsDialogOpen(false);
-      console.log('模型配置已保存');
+      console.log("模型配置已保存");
     } catch (error) {
-      console.error('保存模型配置失败:', error);
+      console.error("保存模型配置失败:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteModel = (modelId: string) => {
-    const updatedModels = models.filter(model => model.id !== modelId);
-    
+    const updatedModels = models.filter((model) => model.id !== modelId);
+
     setModels(updatedModels);
-    localStorage.setItem('co-code-models-config', JSON.stringify(updatedModels));
-    
+    localStorage.setItem(
+      "co-code-models-config",
+      JSON.stringify(updatedModels)
+    );
+
     // 通知 VS Code 扩展更新配置
     if (window.parent && window.parent.postMessage) {
       window.parent.postMessage(
         {
-          type: 'updateModelsConfig',
+          type: "updateModelsConfig",
           allModels: updatedModels,
         },
-        '*',
+        "*"
       );
     }
 
@@ -217,7 +245,7 @@ export const SettingsPanel = () => {
   };
 
   const handleBack = () => {
-    setCurrentTab('chat');
+    setCurrentTab("chat");
   };
 
   const isFormValid = formData.name && formData.baseUrl && formData.apiKey;
@@ -254,7 +282,10 @@ export const SettingsPanel = () => {
                 模型配置
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={openAddDialog} className="flex items-center gap-2">
+                    <Button
+                      onClick={openAddDialog}
+                      className="flex items-center gap-2"
+                    >
                       <Plus className="h-4 w-4" />
                       添加模型
                     </Button>
@@ -262,7 +293,7 @@ export const SettingsPanel = () => {
                   <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingModel ? '编辑模型' : '添加模型'}
+                        {editingModel ? "编辑模型" : "添加模型"}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -278,7 +309,10 @@ export const SettingsPanel = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {modelProviders.map((provider) => (
-                              <SelectItem key={provider.value} value={provider.value}>
+                              <SelectItem
+                                key={provider.value}
+                                value={provider.value}
+                              >
                                 {provider.label}
                               </SelectItem>
                             ))}
@@ -289,14 +323,21 @@ export const SettingsPanel = () => {
                       {/* 模型名称 */}
                       <div className="space-y-2">
                         <Label htmlFor="model-name">模型名称</Label>
-                        <Input
-                          id="model-name"
+                        <Select
                           value={formData.name}
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, name: e.target.value }))
-                          }
-                          placeholder="如: gpt-3.5-turbo, claude-3-sonnet"
-                        />
+                          onValueChange={handleModelChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="选择模型" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getCurrentModelOptions().map((model) => (
+                              <SelectItem key={model.value} value={model.value}>
+                                {model.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Base URL */}
@@ -306,7 +347,10 @@ export const SettingsPanel = () => {
                           id="base-url"
                           value={formData.baseUrl}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, baseUrl: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              baseUrl: e.target.value,
+                            }))
                           }
                           placeholder="https://api.openai.com/v1"
                         />
@@ -320,12 +364,14 @@ export const SettingsPanel = () => {
                           type="password"
                           value={formData.apiKey}
                           onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, apiKey: e.target.value }))
+                            setFormData((prev) => ({
+                              ...prev,
+                              apiKey: e.target.value,
+                            }))
                           }
                           placeholder="请输入您的 API Key"
                         />
                       </div>
-
                     </div>
                     <DialogFooter>
                       <Button
@@ -339,7 +385,7 @@ export const SettingsPanel = () => {
                         onClick={handleSaveModel}
                         disabled={!isFormValid || isSaving}
                       >
-                        {isSaving ? '保存中...' : '保存'}
+                        {isSaving ? "保存中..." : "保存"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -358,75 +404,90 @@ export const SettingsPanel = () => {
                     <TableHeader>
                       <TableRow className="h-10">
                         <TableHead className="py-2">模型名称</TableHead>
-                        <TableHead className="hidden sm:table-cell py-2">供应商</TableHead>
-                        <TableHead className="hidden md:table-cell py-2">Base URL</TableHead>
+                        <TableHead className="hidden sm:table-cell py-2">
+                          供应商
+                        </TableHead>
+                        <TableHead className="hidden md:table-cell py-2">
+                          Base URL
+                        </TableHead>
                         <TableHead className="text-right py-2">操作</TableHead>
                       </TableRow>
                     </TableHeader>
-                  <TableBody>
-                    {models.map((model) => (
-                      <TableRow key={model.id} className="h-12">
-                        <TableCell className="font-medium py-2">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                            <span className="text-sm">{model.name}</span>
-                            <div className="text-xs text-muted-foreground sm:hidden">
-                              {modelProviders.find(p => p.value === model.provider)?.label || model.provider}
+                    <TableBody>
+                      {models.map((model) => (
+                        <TableRow key={model.id} className="h-12">
+                          <TableCell className="font-medium py-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="text-sm">{model.name}</span>
+                              <div className="text-xs text-muted-foreground sm:hidden">
+                                {modelProviders.find(
+                                  (p) => p.value === model.provider
+                                )?.label || model.provider}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell py-2 text-sm">
-                          {modelProviders.find(p => p.value === model.provider)?.label || model.provider}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell py-2 font-mono text-xs text-muted-foreground">
-                          {model.baseUrl}
-                        </TableCell>
-                        <TableCell className="text-right py-2">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(model)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <AlertDialog
-                              open={deletingModelId === model.id}
-                              onOpenChange={(open) => !open && setDeletingModelId(null)}
-                            >
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openDeleteConfirm(model.id)}
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>确认删除</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    您确定要删除模型 "{model.name}" 吗？此操作无法撤销。
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>取消</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteModel(model.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell py-2 text-sm">
+                            {modelProviders.find(
+                              (p) => p.value === model.provider
+                            )?.label || model.provider}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell py-2 font-mono text-xs text-muted-foreground">
+                            {model.baseUrl}
+                          </TableCell>
+                          <TableCell className="text-right py-2">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(model)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <AlertDialog
+                                open={deletingModelId === model.id}
+                                onOpenChange={(open) =>
+                                  !open && setDeletingModelId(null)
+                                }
+                              >
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openDeleteConfirm(model.id)}
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                   >
-                                    删除
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      确认删除
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      您确定要删除模型 "{model.name}"
+                                      吗？此操作无法撤销。
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>取消</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleDeleteModel(model.id)
+                                      }
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      删除
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
                   </Table>
                 </div>
               )}
