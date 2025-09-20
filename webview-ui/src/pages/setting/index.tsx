@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,7 @@ export const SettingsPanel = () => {
   const addModel = useModelStore((state) => state.addModel);
   const updateModel = useModelStore((state) => state.updateModel);
   const deleteModel = useModelStore((state) => state.deleteModel);
+  const setModels = useModelStore((state) => state.setModels);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ModelConfig | null>(null);
@@ -158,6 +159,27 @@ export const SettingsPanel = () => {
   };
 
   const isFormValid = formData.name && formData.baseUrl && formData.apiKey;
+
+  useEffect(() => {
+    window.vscode.postMessage({
+      type: "getModelConfig",
+    });
+  }, []);
+
+  useEffect(() => {
+    const onMessage = (
+      e: MessageEvent<{ type: "modelConfig"; data: ModelConfig[] }>
+    ) => {
+      const data = e.data;
+      if (data.type === "modelConfig") {
+        setModels(data.data ?? []);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-background">

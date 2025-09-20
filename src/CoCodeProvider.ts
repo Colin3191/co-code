@@ -2,15 +2,19 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getNonce } from "./utils/getNonce";
 import { getUri } from "./utils/getUri";
+import { ConfigManager } from "./config/ConfigManager";
 
 export class CoCodeProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "co-code-sidebar";
   private _webviewView?: vscode.WebviewView;
+  private _configManager: ConfigManager;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     private readonly _context: vscode.ExtensionContext
-  ) {}
+  ) {
+    this._configManager = new ConfigManager(_context);
+  }
 
   public async resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -41,12 +45,20 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
 
     // 监听来自webview的消息
     webviewView.webview.onDidReceiveMessage(
-      (message) => {
+      async(message) => {
         switch (message.type) {
           case "ready":
             console.log("Co-Code侧边栏已准备就绪");
-            // 发送当前设置到webview
-            this._sendSettingsToWebview(webviewView.webview);
+            break;
+          case "getModelConfig":
+            const modelConfig = await this._configManager.getModelConfig();
+            webviewView.webview.postMessage({
+              type: "modelConfig",
+              data: modelConfig,
+            });
+            break;
+          case "saveModelConfig":
+            this._configManager.setModelConfig(message.data);
             break;
         }
       },
@@ -85,7 +97,8 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>co code</title>
           <script nonce="${nonce}">
-						window.PUBLIC_BASE_URI = "http://${localServerUrl}"
+						window.PUBLIC_BASE_URI = "http://${localServerUrl}";
+            window.vscode = acquireVsCodeApi();
 					</script>
         </head>
         <body>
@@ -122,7 +135,8 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
           <title>co code</title>
           <script type="module" nonce="${nonce}" crossorigin src="${scriptUri}"></script>
           <script nonce="${nonce}">
-						window.PUBLIC_BASE_URI = "${publicUri}"
+						window.PUBLIC_BASE_URI = "${publicUri}";
+            window.vscode = acquireVsCodeApi();
 					</script>
           <link rel="stylesheet" crossorigin href="${styleUri}" />
         </head>

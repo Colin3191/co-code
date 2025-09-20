@@ -1,5 +1,5 @@
-import { ChatInterface } from '@/components/ChatInterface';
-import { SettingsPanel } from '@/components/SettingsPanel';
+import { ChatInterface } from '@/pages/chat';
+import { SettingsPanel } from '@/pages/setting';
 import { ThemeProvider } from './components/theme-provider';
 import { useTabStore } from './store/useTabStore';
 import { useEffect } from 'react';
