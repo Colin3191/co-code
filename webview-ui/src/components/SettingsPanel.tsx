@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,14 +39,8 @@ import {
 } from "@/components/ui/table";
 import { Settings, ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { useTabStore } from "@/store/useTabStore";
-
-interface ModelConfig {
-  id: string;
-  name: string;
-  provider: string;
-  baseUrl: string;
-  apiKey: string;
-}
+import { useModelStore } from "@/store/useModelStore";
+import type { ModelConfig } from "@/store/useModelStore";
 
 const modelProviders = [
   {
@@ -66,54 +60,22 @@ const modelOptions = {
 export const SettingsPanel = () => {
   const setCurrentTab = useTabStore((state) => state.setCurrentTab);
 
-  const [models, setModels] = useState<ModelConfig[]>([]);
+  const models = useModelStore((state) => state.models);
+  const addModel = useModelStore((state) => state.addModel);
+  const updateModel = useModelStore((state) => state.updateModel);
+  const deleteModel = useModelStore((state) => state.deleteModel);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ModelConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
 
-  // 弹窗表单状态
   const [formData, setFormData] = useState<Omit<ModelConfig, "id">>({
     name: "",
     provider: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
     apiKey: "",
   });
-
-  // 从存储中加载配置
-  useEffect(() => {
-    const savedModels = localStorage.getItem("co-code-models-config");
-    if (savedModels) {
-      try {
-        const parsed = JSON.parse(savedModels);
-        setModels(Array.isArray(parsed) ? parsed : []);
-      } catch (error) {
-        console.error("Failed to parse saved models:", error);
-        // 如果解析失败，尝试兼容旧格式
-        const oldConfig = localStorage.getItem("co-code-model-config");
-        if (oldConfig) {
-          try {
-            const oldParsed = JSON.parse(oldConfig);
-            const migratedModel: ModelConfig = {
-              id: "1",
-              name: oldParsed.name || "deepseek-chat",
-              provider: "deepseek",
-              baseUrl: oldParsed.baseUrl || "https://api.deepseek.com/v1",
-              apiKey: oldParsed.apiKey || "",
-            };
-            setModels([migratedModel]);
-            localStorage.setItem(
-              "co-code-models-config",
-              JSON.stringify([migratedModel])
-            );
-            localStorage.removeItem("co-code-model-config");
-          } catch (migrationError) {
-            console.error("Failed to migrate old config:", migrationError);
-          }
-        }
-      }
-    }
-  }, []);
 
   const handleProviderChange = (provider: string) => {
     const selectedProvider = modelProviders.find((p) => p.value === provider);
@@ -140,7 +102,7 @@ export const SettingsPanel = () => {
     setEditingModel(null);
     setFormData({
       name: "",
-      provider: "deepseek",
+      provider: "DeepSeek",
       baseUrl: "https://api.deepseek.com/v1",
       apiKey: "",
     });
@@ -166,47 +128,13 @@ export const SettingsPanel = () => {
     setIsSaving(true);
 
     try {
-      let updatedModels: ModelConfig[];
-
       if (editingModel) {
         // 编辑现有模型
-        updatedModels = models.map((model) =>
-          model.id === editingModel.id
-            ? { ...formData, id: editingModel.id }
-            : model
-        );
+        updateModel(editingModel.id, formData);
       } else {
         // 添加新模型
-        const newModel: ModelConfig = {
-          ...formData,
-          id: Date.now().toString(),
-        };
-
-        updatedModels = [...models, newModel];
+        addModel(formData);
       }
-
-      setModels(updatedModels);
-
-      // 保存到本地存储
-      localStorage.setItem(
-        "co-code-models-config",
-        JSON.stringify(updatedModels)
-      );
-
-      // 通知 VS Code 扩展更新配置
-      if (window.parent && window.parent.postMessage) {
-        window.parent.postMessage(
-          {
-            type: "updateModelsConfig",
-            allModels: updatedModels,
-          },
-          "*"
-        );
-      }
-
-      // 模拟保存延迟
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       setIsDialogOpen(false);
       console.log("模型配置已保存");
     } catch (error) {
@@ -217,26 +145,7 @@ export const SettingsPanel = () => {
   };
 
   const handleDeleteModel = (modelId: string) => {
-    const updatedModels = models.filter((model) => model.id !== modelId);
-
-    setModels(updatedModels);
-    localStorage.setItem(
-      "co-code-models-config",
-      JSON.stringify(updatedModels)
-    );
-
-    // 通知 VS Code 扩展更新配置
-    if (window.parent && window.parent.postMessage) {
-      window.parent.postMessage(
-        {
-          type: "updateModelsConfig",
-          allModels: updatedModels,
-        },
-        "*"
-      );
-    }
-
-    // 关闭确认对话框
+    deleteModel(modelId);
     setDeletingModelId(null);
   };
 
@@ -373,7 +282,7 @@ export const SettingsPanel = () => {
                         />
                       </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                       <Button
                         variant="outline"
                         onClick={() => setIsDialogOpen(false)}
@@ -502,7 +411,7 @@ export const SettingsPanel = () => {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>• 支持配置多个AI模型，使用时可以自由选择</p>
               <p>• 选择供应商会自动设置对应的 Base URL，也可手动修改</p>
-              <p>• API Key 将安全存储在本地，不会上传到服务器</p>
+              <p>• API Key 仅存储在内存中，刷新页面后会重置</p>
               <p>• 配置保存后会立即生效，无需重启扩展</p>
               <p>• 支持兼容 OpenAI API 格式的任意第三方模型服务</p>
             </CardContent>
