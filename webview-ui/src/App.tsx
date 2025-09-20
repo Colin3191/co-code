@@ -1,30 +1,20 @@
-import { ChatInterface } from '@/pages/chat';
-import { SettingsPanel } from '@/pages/setting';
-import { ThemeProvider } from './components/theme-provider';
-import { useTabStore } from './store/useTabStore';
-import { useEffect } from 'react';
+import { ChatInterface } from "@/pages/chat";
+import { SettingsPanel } from "@/pages/setting";
+import { ThemeProvider } from "./components/theme-provider";
+import { useTabStore } from "./store/useTabStore";
+import { useInitModelConfig } from "./hooks/useInitModeConfig";
+import { useOpenSettingPanel } from "./hooks/useOpenSettingPanel";
 
 const App = () => {
   const currentTab = useTabStore((state) => state.currentTab);
-  const setCurrentTab = useTabStore((state) => state.setCurrentTab);
 
-  useEffect(() => {
-    const handleMessage = (e: MessageEvent<{ type: 'openSettingPanel' }>) => {
-      const data = e.data;
-      if (data.type === 'openSettingPanel') {
-        setCurrentTab('settings');
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [setCurrentTab]);
+  useOpenSettingPanel();
+  useInitModelConfig();
 
   return (
     <ThemeProvider defaultTheme="dark">
-      {currentTab === 'chat' && <ChatInterface />}
-      {currentTab === 'settings' && <SettingsPanel />}
+      {currentTab === "chat" && <ChatInterface />}
+      {currentTab === "settings" && <SettingsPanel />}
     </ThemeProvider>
   );
 };
