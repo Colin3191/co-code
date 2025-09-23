@@ -77,7 +77,7 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
       `img-src ${webview.cspSource} http://${localServerUrl} data:`,
       `media-src ${webview.cspSource}`,
       `script-src 'unsafe-eval' ${webview.cspSource} http://${localServerUrl} 'nonce-${nonce}'`,
-      `connect-src ${webview.cspSource} ws://${localServerUrl} http://${localServerUrl}`,
+      `connect-src ${webview.cspSource} ws://${localServerUrl} http://${localServerUrl} https://*`,
     ];
     // 安装 es6-string-html 插件启用高亮
     return /*html */ `
@@ -129,7 +129,7 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
       <!DOCTYPE html>
       <html lang="en">
         <head>
-          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:; media-src ${webview.cspSource}; script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' 'strict-dynamic'; connect-src ${webview.cspSource};">
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:; media-src ${webview.cspSource}; script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' 'strict-dynamic'; connect-src ${webview.cspSource} https://*;">
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>co code</title>

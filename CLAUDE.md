@@ -6,10 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Extension Development
 - `pnpm run compile` - Compile TypeScript and lint code
-- `pnpm run watch` - Start watch mode for development
+- `pnpm run watch` - Start watch mode for development (runs both esbuild and tsc watchers)
 - `pnpm run package` - Build production package
 - `pnpm run lint` - Run ESLint on src directory
 - `pnpm run check-types` - Run TypeScript type checking
+- `pnpm run vscode:prepublish` - Pre-publish build (same as package)
 
 ### Webview Development
 Navigate to `webview-ui/` directory:
@@ -20,6 +21,8 @@ Navigate to `webview-ui/` directory:
 ### Testing
 - `pnpm test` - Run VS Code extension tests
 - `pnpm run pretest` - Compile and prepare for testing
+- `pnpm run compile-tests` - Compile tests only
+- `pnpm run watch-tests` - Watch and compile tests
 
 ## Architecture Overview
 

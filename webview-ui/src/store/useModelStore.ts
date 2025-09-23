@@ -1,8 +1,5 @@
-import { create } from "zustand";
-
-const generateUniqueId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-};
+import { generateUniqueId } from '@/utils/generateUniqueId';
+import { create } from 'zustand';
 
 export interface ModelConfig {
   id: string;
@@ -15,8 +12,8 @@ export interface ModelConfig {
 interface ModelState {
   models: ModelConfig[];
   currentModelId: string | null;
-  addModel: (model: Omit<ModelConfig, "id">) => void;
-  updateModel: (id: string, model: Omit<ModelConfig, "id">) => void;
+  addModel: (model: Omit<ModelConfig, 'id'>) => void;
+  updateModel: (id: string, model: Omit<ModelConfig, 'id'>) => void;
   deleteModel: (id: string) => void;
   setModels: (models: ModelConfig[]) => void;
   setCurrentModel: (id: string) => void;
@@ -33,7 +30,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
       currentModelId: state.currentModelId || newModel.id, // 如果没有当前模型，设置为第一个
     }));
     window.vscode.postMessage({
-      type: "saveModelConfig",
+      type: 'saveModelConfig',
       data: get().models,
     });
   },
@@ -42,7 +39,7 @@ export const useModelStore = create<ModelState>((set, get) => ({
       models: state.models.map((m) => (m.id === id ? { ...model, id } : m)),
     }));
     window.vscode.postMessage({
-      type: "saveModelConfig",
+      type: 'saveModelConfig',
       data: get().models,
     });
   },
@@ -51,23 +48,28 @@ export const useModelStore = create<ModelState>((set, get) => ({
       const newModels = state.models.filter((m) => m.id !== id);
       return {
         models: newModels,
-        currentModelId: state.currentModelId === id
-          ? (newModels.length > 0 ? newModels[0].id : null)
-          : state.currentModelId,
+        currentModelId:
+          state.currentModelId === id
+            ? newModels.length > 0
+              ? newModels[0].id
+              : null
+            : state.currentModelId,
       };
     });
     window.vscode.postMessage({
-      type: "saveModelConfig",
+      type: 'saveModelConfig',
       data: get().models,
     });
   },
-  setModels: (models) => set((state) => ({
-    models,
-    currentModelId: state.currentModelId || (models.length > 0 ? models[0].id : null),
-  })),
+  setModels: (models) =>
+    set((state) => ({
+      models,
+      currentModelId:
+        state.currentModelId || (models.length > 0 ? models[0].id : null),
+    })),
   setCurrentModel: (id) => set({ currentModelId: id }),
   getCurrentModel: () => {
     const { models, currentModelId } = get();
-    return models.find(m => m.id === currentModelId) || null;
+    return models.find((m) => m.id === currentModelId) || null;
   },
 }));
