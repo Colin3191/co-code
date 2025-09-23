@@ -1,73 +1,106 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-type Theme = "dark" | "light" | "system"
+type Theme = 'dark' | 'light';
 
 type ThemeProviderProps = {
-  children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
-}
+  children: React.ReactNode;
+};
 
 type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+};
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-}
+const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
+  undefined,
+);
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const mapVsCodeTheme = (kind?: number | string): Theme => {
+  if (kind === 2 || kind === 3) {
+    return 'dark';
+  }
+  if (kind === 4) {
+    return 'light';
+  }
+  if (typeof kind === 'string') {
+    const normalized = kind.toLowerCase();
+    if (normalized.includes('dark') && !normalized.includes('light')) {
+      return 'dark';
+    }
+  }
+  return 'light';
+};
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+const detectThemeFromDom = (): Theme => {
+  if (
+    document.body.classList.contains('vscode-dark') ||
+    document.body.classList.contains('vscode-high-contrast')
+  ) {
+    return 'dark';
+  }
+  return 'light';
+};
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setThemeState] = useState<Theme>(() => detectThemeFromDom());
 
   useEffect(() => {
-    const root = window.document.documentElement
+    const applyThemeClass = (value: Theme) => {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(value);
+    };
 
-    root.classList.remove("light", "dark")
+    const syncTheme = (next: Theme) => {
+      setThemeState(next);
+      applyThemeClass(next);
+    };
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
+    syncTheme(detectThemeFromDom());
 
-      root.classList.add(systemTheme)
-      return
-    }
+    const handleMessage = (event: MessageEvent) => {
+      const { data } = event;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'colorTheme') {
+        const nextTheme = mapVsCodeTheme(data.data?.kind ?? data.kind);
+        syncTheme(nextTheme);
+      }
+    };
 
-    root.classList.add(theme)
-  }, [theme])
+    window.addEventListener('message', handleMessage);
+    window.vscode?.postMessage({ type: 'requestColorTheme' });
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
-    },
-  }
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+
+  const value = useMemo<ThemeProviderState>(
+    () => ({
+      theme,
+      setTheme: (nextTheme: Theme) => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(nextTheme);
+        setThemeState(nextTheme);
+      },
+    }),
+    [theme],
+  );
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider value={value}>
       {children}
     </ThemeProviderContext.Provider>
-  )
+  );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
+  const context = useContext(ThemeProviderContext);
 
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
 
-  return context
-}
+  return context;
+};

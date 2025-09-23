@@ -43,12 +43,32 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
         ? await this.getHMRHtmlContent(webviewView.webview)
         : this.getHtmlForWebview(webviewView.webview);
 
+    const postColorTheme = (theme: vscode.ColorTheme | vscode.ColorThemeKind) => {
+      const kind = typeof theme === "number" ? theme : theme.kind;
+      webviewView.webview.postMessage({
+        type: "colorTheme",
+        data: {
+          kind,
+        },
+      });
+    };
+
+    postColorTheme(vscode.window.activeColorTheme);
+
+    const themeChangeDisposable = vscode.window.onDidChangeActiveColorTheme(
+      (theme) => postColorTheme(theme)
+    );
+    this._context.subscriptions.push(themeChangeDisposable);
+
     // 监听来自webview的消息
     webviewView.webview.onDidReceiveMessage(
       async(message) => {
         switch (message.type) {
           case "ready":
             console.log("Co-Code侧边栏已准备就绪");
+            break;
+          case "requestColorTheme":
+            postColorTheme(vscode.window.activeColorTheme);
             break;
           case "getModelConfig":
             const modelConfig = await this._configManager.getModelConfig();

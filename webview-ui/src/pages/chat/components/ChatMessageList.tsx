@@ -19,7 +19,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   return (
     <div ref={ref} className="flex-1 flex flex-col-reverse overflow-auto">
-      <div className="space-y-4">
+      <div className="space-y-4 my-4">
         {messages.map((message) => (
           <ChatMessageItem key={message.id} message={message} />
         ))}
