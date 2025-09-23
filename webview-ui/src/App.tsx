@@ -12,7 +12,7 @@ const App = () => {
   useInitModelConfig();
 
   return (
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider>
       {currentTab === "chat" && <ChatInterface />}
       {currentTab === "settings" && <SettingsPanel />}
     </ThemeProvider>

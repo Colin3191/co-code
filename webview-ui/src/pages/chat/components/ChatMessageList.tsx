@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import dayjs from 'dayjs';
 import { Bot, Loader2, User } from 'lucide-react';
 import { type Message } from '../store/useChatStore';
 
@@ -19,7 +18,7 @@ export const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   return (
     <div ref={ref} className="flex-1 flex flex-col-reverse overflow-auto">
-      <div className="space-y-4 my-4">
+      <div className="space-y-4 my-4 mx-2">
         {messages.map((message) => (
           <ChatMessageItem key={message.id} message={message} />
         ))}
@@ -69,9 +68,6 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message }) => {
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         )}
 
-        <p className="text-xs opacity-70 mt-1">
-          {dayjs(message.timestamp).format('YYYY-MM-DD HH:mm:ss')}
-        </p>
       </div>
 
       {message.role === 'user' && (

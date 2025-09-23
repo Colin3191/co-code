@@ -37,7 +37,6 @@ export const ChatInterface = () => {
         id: generateUniqueId(),
         content: `当前仅支持 DeepSeek 模型，请在设置中选择 DeepSeek 提供商。`,
         role: 'assistant',
-        timestamp: Date.now(),
       });
       return;
     }
@@ -46,7 +45,6 @@ export const ChatInterface = () => {
       id: generateUniqueId(),
       content: inputValue,
       role: 'user',
-      timestamp: Date.now(),
     };
 
     if (!currentModel.apiKey) {
@@ -54,7 +52,6 @@ export const ChatInterface = () => {
         id: generateUniqueId(),
         content: '未检测到 API Key，请在设置中填写后重试。',
         role: 'assistant',
-        timestamp: Date.now(),
       });
       return;
     }
@@ -73,7 +70,6 @@ export const ChatInterface = () => {
       id: aiMessageId,
       content: '',
       role: 'assistant',
-      timestamp: Date.now(),
       status: 'streaming',
     });
 
@@ -108,7 +104,6 @@ export const ChatInterface = () => {
           fullText += part.text;
           updateMessage(aiMessageId, {
             content: fullText,
-            timestamp: Date.now(),
             status: 'streaming',
           });
           continue;
@@ -127,7 +122,6 @@ export const ChatInterface = () => {
           reasoningText += part.text;
           updateMessage(aiMessageId, {
             reasoning: reasoningText,
-            timestamp: Date.now(),
             status: 'streaming',
           });
           continue;
@@ -136,7 +130,6 @@ export const ChatInterface = () => {
         if (part.type === 'reasoning-end') {
           updateMessage(aiMessageId, {
             reasoning: reasoningText || undefined,
-            timestamp: Date.now(),
             status: 'streaming',
           });
         }
@@ -162,7 +155,6 @@ export const ChatInterface = () => {
           : `请求 DeepSeek 失败：${
               error instanceof Error ? error.message : '未知错误'
             }`,
-        timestamp: Date.now(),
         reasoning: undefined,
         status: 'complete',
       });

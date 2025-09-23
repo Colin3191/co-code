@@ -17,7 +17,7 @@ body,
 @layer base {
   :root {
     color-scheme: light;
-    --background: var(--vscode-editor-background, #ffffff);
+    --background: var(--vscode-sideBar-background, #ffffff);
     --foreground: var(--vscode-editor-foreground, #1f1f1f);
     --card: var(--vscode-editorWidget-background, var(--background));
     --card-foreground: var(--vscode-editorWidget-foreground, var(--foreground));
