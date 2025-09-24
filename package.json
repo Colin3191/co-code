@@ -2,7 +2,7 @@
   "name": "co-code",
   "displayName": "co code",
   "description": "Co-Code AI助手 - 强大的 VS Code AI 聊天扩展",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.103.0"
   },
