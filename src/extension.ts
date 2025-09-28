@@ -2,14 +2,26 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { CoCodeProvider } from './CoCodeProvider';
+import { ContextStore } from './store/contextStore';
+import { ContextService } from './services/context/ContextService';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "co-code" is now active!');
 
+  const contextStore = new ContextStore();
+  context.subscriptions.push(contextStore);
+
+  const contextService = new ContextService(contextStore);
+
   // 注册侧边栏面板提供者
-  const sidebarProvider = new CoCodeProvider(context.extensionUri, context);
+  const sidebarProvider = new CoCodeProvider(
+    context.extensionUri,
+    context,
+    contextStore,
+    contextService,
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       CoCodeProvider.viewType,
@@ -37,7 +49,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // 添加到订阅列表
-  context.subscriptions.push(openSidebarCommand, openSettingPanelCommand);
+  context.subscriptions.push(
+    openSidebarCommand,
+    openSettingPanelCommand,
+  );
 }
 
 // This method is called when your extension is deactivated

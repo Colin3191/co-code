@@ -2,7 +2,9 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getNonce } from "./utils/getNonce";
 import { getUri } from "./utils/getUri";
-import { ConfigManager } from "./config/ConfigManager";
+import { ConfigManager } from './config/ConfigManager';
+import { ContextStore } from './store/contextStore';
+import { ContextService } from './services/context/ContextService';
 
 export class CoCodeProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "co-code-sidebar";
@@ -11,7 +13,9 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    private readonly _context: vscode.ExtensionContext
+    private readonly _context: vscode.ExtensionContext,
+    private readonly _contextStore: ContextStore,
+    private readonly _contextService: ContextService,
   ) {
     this._configManager = new ConfigManager(_context);
   }
@@ -60,12 +64,38 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
     );
     this._context.subscriptions.push(themeChangeDisposable);
 
+    const postContextState = () => {
+      if (!this._webviewView) {
+        return;
+      }
+      this._webviewView.webview.postMessage({
+        type: 'context:update',
+        data: {
+          entries: this._contextStore.getEntries(),
+        },
+      });
+    };
+
+    const storeDisposable = this._contextStore.onDidChange(() => {
+      postContextState();
+    });
+    this._context.subscriptions.push(storeDisposable);
+    const removeDisposable = this._contextStore.onDidRemove((uri) => {
+      this._webviewView?.webview.postMessage({
+        type: 'context:entryRemoved',
+        data: { uri },
+      });
+    });
+    this._context.subscriptions.push(removeDisposable);
+    postContextState();
+
     // 监听来自webview的消息
     webviewView.webview.onDidReceiveMessage(
       async(message) => {
         switch (message.type) {
           case "ready":
             console.log("Co-Code侧边栏已准备就绪");
+            postContextState();
             break;
           case "requestColorTheme":
             postColorTheme(vscode.window.activeColorTheme);
@@ -79,6 +109,30 @@ export class CoCodeProvider implements vscode.WebviewViewProvider {
             break;
           case "saveModelConfig":
             this._configManager.setModelConfig(message.data);
+            break;
+          case 'context:listFiles':
+            try {
+              const files = await this._contextService.listWorkspaceFiles();
+              webviewView.webview.postMessage({
+                type: 'context:fileList',
+                data: { files },
+              });
+            } catch (error) {
+              webviewView.webview.postMessage({
+                type: 'context:fileList',
+                data: { files: [], error: error instanceof Error ? error.message : String(error) },
+              });
+            }
+            break;
+          case 'context:addFile':
+            if (typeof message.data?.uri === 'string') {
+              await this._contextService.addFileContext(vscode.Uri.parse(message.data.uri));
+            }
+            break;
+          case 'context:remove':
+            if (typeof message.data?.uri === 'string') {
+              this._contextService.removeContext(message.data.uri);
+            }
             break;
         }
       },
